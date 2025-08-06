@@ -4,6 +4,9 @@ import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { formatTime } from "@/lib/utils";
+import ProviderStatus from "@/components/ProviderStatus";
+import SmartWelcomeMessage from "@/components/SmartWelcomeMessage";
 import type { User, Session, ChatMessage, EmotionData } from "@shared/schema";
 
 interface ChatInterfaceProps {
@@ -145,9 +148,12 @@ export default function ChatInterface({
             </div>
             <div>
               <h2 className="text-xl font-semibold gradient-text">المساعد العاطفي الذكي</h2>
-              <p className="text-sm text-gray-400">
-                {currentEmotions ? "متصل - يحلل المشاعر" : "متصل - في انتظار الكاميرا"}
-              </p>
+              <div className="flex items-center gap-3">
+                <p className="text-sm text-gray-400">
+                  {currentEmotions ? "متصل - يحلل المشاعر" : "متصل - في انتظار الكاميرا"}
+                </p>
+                <ProviderStatus />
+              </div>
             </div>
           </div>
           
@@ -205,8 +211,13 @@ export default function ChatInterface({
                 </DialogContent>
               </Dialog>
             )}
-            
-            <Button variant="outline" size="sm" className="border-gray-600">
+
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="border-gray-600"
+              onClick={() => setShowRegisterDialog(true)}
+            >
               <i className="bi bi-gear"></i>
             </Button>
           </div>
@@ -215,19 +226,12 @@ export default function ChatInterface({
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto scrollbar-hidden p-6 space-y-4">
-        {/* Welcome Message */}
+        {/* Smart Welcome Message */}
         <div className="flex items-start gap-3">
           <div className="w-8 h-8 rounded-full bg-gradient-to-r from-accent to-primary flex items-center justify-center flex-shrink-0">
             <i className="bi bi-robot text-sm text-white"></i>
           </div>
-          <div className="chat-bubble-ai p-4 max-w-md">
-            <p className="text-gray-100">
-              مرحباً {user.name.startsWith('ضيف_') ? '' : user.name}! أنا مساعدك العاطفي الذكي. 
-              سأقوم بتحليل مشاعرك في الوقت الفعلي وأقدم لك الدعم المناسب. 
-              ابدأ بتشغيل الكاميرا للبدء.
-            </p>
-            <span className="text-xs text-gray-400 mt-2 block">الآن</span>
-          </div>
+          <SmartWelcomeMessage userName={user.name} />
         </div>
 
         {/* Chat Messages */}

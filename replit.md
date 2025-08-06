@@ -4,7 +4,11 @@ This is a professional emotional AI chatbot that combines real-time facial emoti
 
 # User Preferences
 
-Preferred communication style: Simple, everyday language.
+- Preferred communication style: Simple, everyday language
+- Wants more automatic and professional system with easier usability
+- Requires free AI API alternatives instead of paid services
+- Prefers Arabic language interface throughout
+- Values automatic emotion analysis and intelligent responses
 
 # System Architecture
 

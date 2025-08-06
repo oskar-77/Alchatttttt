@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import ChatInterface from "@/components/ChatInterface";
 import MonitoringPanel from "@/components/MonitoringPanel";
+import AutoSetupDialog from "@/components/AutoSetupDialog";
+import SmartNotifications from "@/components/SmartNotifications";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import type { User, Session, EmotionData } from "@shared/schema";
@@ -10,17 +12,28 @@ export default function Home() {
   const [currentSession, setCurrentSession] = useState<Session | null>(null);
   const [currentEmotions, setCurrentEmotions] = useState<EmotionData | null>(null);
   const [showMobilePanel, setShowMobilePanel] = useState(false);
+  const [showAutoSetup, setShowAutoSetup] = useState(false);
+  const [sessionStartTime] = useState(Date.now());
 
-  // Initialize guest user on mount
+  // Initialize guest user on mount and check for auto-setup
   useEffect(() => {
     const storedUser = localStorage.getItem('emotional_ai_user');
     const storedSession = localStorage.getItem('emotional_ai_session');
+    const hasSeenSetup = localStorage.getItem('emotional_ai_setup_seen');
     
     if (storedUser && storedSession) {
       setCurrentUser(JSON.parse(storedUser));
       setCurrentSession(JSON.parse(storedSession));
     } else {
       createGuestUser();
+    }
+
+    // Show auto-setup dialog for new users
+    if (!hasSeenSetup) {
+      setTimeout(() => {
+        setShowAutoSetup(true);
+        localStorage.setItem('emotional_ai_setup_seen', 'true');
+      }, 2000); // Show after 2 seconds to let the app load
     }
   }, []);
 
@@ -150,6 +163,18 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* Smart Notifications */}
+      <SmartNotifications 
+        currentEmotions={currentEmotions}
+        sessionDuration={Math.floor((Date.now() - sessionStartTime) / 1000)}
+      />
+
+      {/* Auto Setup Dialog */}
+      <AutoSetupDialog 
+        open={showAutoSetup}
+        onOpenChange={setShowAutoSetup}
+      />
     </div>
   );
 }
