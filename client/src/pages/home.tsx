@@ -3,6 +3,8 @@ import ChatInterface from "@/components/ChatInterface";
 import MonitoringPanel from "@/components/MonitoringPanel";
 import AutoSetupDialog from "@/components/AutoSetupDialog";
 import SmartNotifications from "@/components/SmartNotifications";
+import SidebarToggle from "@/components/SidebarToggle";
+import { useEmotionBuffer } from "@/hooks/useEmotionBuffer";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import type { User, Session, EmotionData } from "@shared/schema";
@@ -14,6 +16,7 @@ export default function Home() {
   const [showMobilePanel, setShowMobilePanel] = useState(false);
   const [showAutoSetup, setShowAutoSetup] = useState(false);
   const [sessionStartTime] = useState(Date.now());
+  const emotionBuffer = useEmotionBuffer();
 
   // Initialize guest user on mount and check for auto-setup
   useEffect(() => {
@@ -118,6 +121,7 @@ export default function Home() {
         currentEmotions={currentEmotions}
         onRegisterUser={registerUser}
         onEmotionUpdate={updateEmotionData}
+        emotionBuffer={emotionBuffer}
       />
 
       {/* Desktop Monitoring Panel */}
@@ -130,15 +134,11 @@ export default function Home() {
         />
       </div>
 
-      {/* Mobile Panel Toggle */}
-      <div className="lg:hidden fixed bottom-4 left-4 z-50">
-        <button 
-          onClick={() => setShowMobilePanel(!showMobilePanel)}
-          className="w-14 h-14 rounded-full bg-gradient-to-r from-primary to-secondary text-white shadow-lg hover:scale-105 transition-transform"
-        >
-          <i className="bi bi-bar-chart text-xl"></i>
-        </button>
-      </div>
+      {/* Sidebar Toggle Component */}
+      <SidebarToggle 
+        isOpen={showMobilePanel}
+        onToggle={() => setShowMobilePanel(!showMobilePanel)}
+      />
 
       {/* Mobile Monitoring Panel */}
       {showMobilePanel && (

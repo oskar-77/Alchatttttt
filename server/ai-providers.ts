@@ -148,6 +148,67 @@ class GeminiProvider implements AIProvider {
   }
 }
 
+// Free GPT API Provider (No API Key Required!)
+class FreeGPTProvider implements AIProvider {
+  name = "Free GPT (مجاني تماماً)";
+
+  isConfigured(): boolean {
+    return true; // Always available, no API key needed
+  }
+
+  async generateResponse(userMessage: string, emotionContext: EmotionData): Promise<string> {
+    try {
+      const dominantEmotion = Object.entries(emotionContext).reduce((a, b) => a[1] > b[1] ? a : b);
+      const emotionName = dominantEmotion[0];
+      const emotionArabic = this.getEmotionArabic(emotionName);
+      
+      const prompt = `أنت مساعد ذكي عاطفي يتحدث العربية. المستخدم يشعر بـ ${emotionArabic}. 
+      رسالته: "${userMessage}"
+      
+      قدم رداً متعاطفاً ومفيداً بالعربية (100-150 كلمة):`;
+
+      // Using free GPT API that requires no authentication
+      const response = await fetch(
+        `https://free-unoficial-gpt4o-mini-api-g70n.onrender.com/chat/?query=${encodeURIComponent(prompt)}`,
+        {
+          method: "GET",
+          headers: {
+            "Accept": "application/json",
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.response) {
+        return result.response;
+      } else {
+        throw new Error("No response received");
+      }
+    } catch (error) {
+      console.error("Free GPT error:", error);
+      throw error;
+    }
+  }
+
+  private getEmotionArabic(emotion: string): string {
+    const emotionMap = {
+      happy: "السعادة",
+      sad: "الحزن",
+      angry: "الغضب",
+      surprised: "التفاجؤ",
+      fearful: "الخوف",
+      disgusted: "الاشمئزاز",
+      neutral: "الحياد"
+    };
+    return emotionMap[emotion as keyof typeof emotionMap] || emotion;
+  }
+}
+
 // Free Hugging Face Provider
 class HuggingFaceProvider implements AIProvider {
   name = "Hugging Face (مجاني)";
@@ -299,7 +360,8 @@ class AIProviderManager {
 
   constructor() {
     this.providers = [
-      new GeminiProvider(),     // Free and powerful - highest priority
+      new FreeGPTProvider(),    // Completely free, no API key needed!
+      new GeminiProvider(),     // Free and powerful
       new OpenAIProvider(),     // Premium but reliable
       new HuggingFaceProvider(), // Free alternative
       new LocalProvider()       // Always available fallback

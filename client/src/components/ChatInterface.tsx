@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { formatTime } from "@/lib/utils";
 import ProviderStatus from "@/components/ProviderStatus";
 import SmartWelcomeMessage from "@/components/SmartWelcomeMessage";
+import AIProviderSettings from "@/components/AIProviderSettings";
 import type { User, Session, ChatMessage, EmotionData } from "@shared/schema";
 
 interface ChatInterfaceProps {
@@ -15,6 +16,10 @@ interface ChatInterfaceProps {
   currentEmotions: EmotionData | null;
   onRegisterUser: (userData: { name: string; email?: string }) => void;
   onEmotionUpdate: (emotions: EmotionData, age?: number, gender?: string) => void;
+  emotionBuffer?: {
+    getLatestEmotion: () => any;
+    getAverageEmotions: (timeWindow?: number) => EmotionData | null;
+  };
 }
 
 export default function ChatInterface({ 
@@ -22,11 +27,13 @@ export default function ChatInterface({
   session, 
   currentEmotions, 
   onRegisterUser,
-  onEmotionUpdate 
+  onEmotionUpdate,
+  emotionBuffer
 }: ChatInterfaceProps) {
   const [message, setMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [userName, setUserName] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -38,14 +45,18 @@ export default function ChatInterface({
     enabled: !!session.id
   });
 
-  // Send message mutation
+  // Send message mutation with emotion buffer
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
+      // Get latest emotion from buffer if available
+      const latestEmotion = emotionBuffer?.getLatestEmotion();
+      const emotionToUse = latestEmotion?.emotions || currentEmotions;
+      
       const response = await apiRequest('POST', '/api/chat', {
         sessionId: session.id,
         isUser: true,
         content,
-        emotionContext: currentEmotions
+        emotionContext: emotionToUse
       });
       return response.json();
     },
@@ -212,11 +223,15 @@ export default function ChatInterface({
               </Dialog>
             )}
 
+            <AIProviderSettings 
+              open={showSettingsDialog}
+              onOpenChange={setShowSettingsDialog}
+            />
             <Button 
               variant="outline" 
               size="sm" 
               className="border-gray-600"
-              onClick={() => setShowRegisterDialog(true)}
+              onClick={() => setShowSettingsDialog(true)}
             >
               <i className="bi bi-gear"></i>
             </Button>

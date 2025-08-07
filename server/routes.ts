@@ -168,6 +168,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(providers);
   });
 
+  // Test AI Provider endpoint
+  app.post('/api/test-ai-provider', async (req, res) => {
+    try {
+      const { provider: providerName, message, emotions } = req.body;
+      
+      if (!providerName || !message || !emotions) {
+        return res.status(400).json({ error: 'Missing required fields' });
+      }
+
+      const response = await aiProviderManager.generateResponse(message, emotions);
+      
+      res.json({ 
+        success: true,
+        response: response.content,
+        provider: response.provider
+      });
+    } catch (error: any) {
+      console.error('AI Provider test error:', error);
+      res.status(500).json({ 
+        error: error.message || 'Failed to test AI provider'
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -68,16 +68,30 @@ export default function CameraFeed({ session, onEmotionUpdate, isMobile = false 
     };
   }, []);
 
-  // Auto-start detection when models are loaded and camera is active (AUTOMATIC!)
+  // Auto-start detection when models are loaded and camera is active (CONTINUOUS!)
   useEffect(() => {
     if (isModelsLoaded && cameraStatus === 'active' && !isDetecting) {
-      // Start automatically after a short delay for better UX
+      // Start automatically and keep running continuously
       const timer = setTimeout(() => {
         handleStartRecording();
       }, 1000);
       return () => clearTimeout(timer);
     }
   }, [isModelsLoaded, cameraStatus]);
+
+  // Keep detection running continuously while camera is active
+  useEffect(() => {
+    if (cameraStatus === 'active' && isModelsLoaded && !isDetecting) {
+      handleStartRecording();
+    }
+    
+    // Clean up when component unmounts or camera stops
+    return () => {
+      if (isDetecting) {
+        handleStopRecording();
+      }
+    };
+  }, [cameraStatus, isModelsLoaded]);
 
   const handleStartRecording = () => {
     if (isModelsLoaded && cameraStatus === 'active') {
