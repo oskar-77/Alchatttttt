@@ -19,6 +19,8 @@ interface Notification {
 export default function SmartNotifications({ currentEmotions, sessionDuration }: SmartNotificationsProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [lastEmotionCheck, setLastEmotionCheck] = useState<string>('');
+  const [emotionNotificationCooldown, setEmotionNotificationCooldown] = useState<Record<string, number>>({});
 
   const { data: providers = [] } = useQuery<Array<{name: string; configured: boolean}>>({
     queryKey: ['/api/ai-providers']
@@ -40,38 +42,63 @@ export default function SmartNotifications({ currentEmotions, sessionDuration }:
       });
     }
 
-    // Emotion Analysis Tips
+    // Emotion Analysis Tips - with unique timestamped IDs
     if (currentEmotions && sessionDuration > 60) {
       const dominantEmotion = Object.entries(currentEmotions).reduce((a, b) => a[1] > b[1] ? a : b);
       const emotionName = dominantEmotion[0];
       const emotionIntensity = dominantEmotion[1];
+      const emotionKey = `${emotionName}-${Math.floor(emotionIntensity / 10)}`;
 
-      if (emotionName === 'sad' && emotionIntensity > 70 && !dismissed.has('sad-support')) {
-        newNotifications.push({
-          id: 'sad-support',
-          type: 'info',
-          title: '💙 نحن هنا لك',
-          message: 'أشعر بحزنك. تذكر أن التحدث يساعد، وهذه المشاعر طبيعية ومؤقتة.',
-          persistent: true
-        });
-      }
+      // Only show new notification if emotion has changed significantly and cooldown has passed
+      const now = Date.now();
+      const emotionCooldownKey = `${emotionName}-${Math.floor(emotionIntensity / 20)}`;
+      const lastNotificationTime = emotionNotificationCooldown[emotionCooldownKey] || 0;
+      const cooldownPeriod = 30000; // 30 seconds cooldown between similar notifications
+      
+      if (emotionKey !== lastEmotionCheck && (now - lastNotificationTime) > cooldownPeriod) {
+        setLastEmotionCheck(emotionKey);
+        setEmotionNotificationCooldown(prev => ({ ...prev, [emotionCooldownKey]: now }));
 
-      if (emotionName === 'angry' && emotionIntensity > 60 && !dismissed.has('anger-calm')) {
-        newNotifications.push({
-          id: 'anger-calm',
-          type: 'warning',
-          title: '🌱 خذ نفساً عميقاً',
-          message: 'أرى أنك منزعج. جرب تمرين التنفس العميق: ادخل الهواء 4 ثوان، احبسه 4، واخرجه 4 ثوان.',
-        });
-      }
+        if (emotionName === 'sad' && emotionIntensity > 70) {
+          const sadId = `sad-support-${now}`;
+          newNotifications.push({
+            id: sadId,
+            type: 'info',
+            title: '💙 نحن هنا لك',
+            message: 'أشعر بحزنك. تذكر أن التحدث يساعد، وهذه المشاعر طبيعية ومؤقتة.',
+            persistent: false
+          });
+        }
 
-      if (emotionName === 'happy' && emotionIntensity > 80 && !dismissed.has('happy-celebration')) {
-        newNotifications.push({
-          id: 'happy-celebration',
-          type: 'success',
-          title: '🎉 أحب سعادتك!',
-          message: 'هذه لحظة جميلة! شاركني ما يجعلك تشعر بهذا الفرح.',
-        });
+        if (emotionName === 'angry' && emotionIntensity > 60) {
+          const angerId = `anger-calm-${now}`;
+          newNotifications.push({
+            id: angerId,
+            type: 'warning',
+            title: '🌱 خذ نفساً عميقاً',
+            message: 'أرى أنك منزعج. جرب تمرين التنفس العميق: ادخل الهواء 4 ثوان، احبسه 4، واخرجه 4 ثوان.',
+          });
+        }
+
+        if (emotionName === 'happy' && emotionIntensity > 80) {
+          const happyId = `happy-celebration-${now}`;
+          newNotifications.push({
+            id: happyId,
+            type: 'success',
+            title: '🎉 أحب سعادتك!',
+            message: 'هذه لحظة جميلة! شاركني ما يجعلك تشعر بهذا الفرح.',
+          });
+        }
+
+        if (emotionName === 'fearful' && emotionIntensity > 65) {
+          const fearId = `fear-support-${now}`;
+          newNotifications.push({
+            id: fearId,
+            type: 'info',
+            title: '🤗 أنت في أمان',
+            message: 'أشعر بقلقك. تذكر أن تأخذ نفساً عميقاً وتركز على اللحظة الحالية.',
+          });
+        }
       }
     }
 
@@ -98,12 +125,31 @@ export default function SmartNotifications({ currentEmotions, sessionDuration }:
 
     setNotifications(prev => {
       const existing = prev.filter(n => n.persistent);
-      return [...existing, ...newNotifications.filter(n => !dismissed.has(n.id))];
+      const filtered = newNotifications.filter(n => !dismissed.has(n.id));
+      return [...existing, ...filtered];
     });
   }, [currentEmotions, sessionDuration, hasAI, dismissed]);
 
+  // Auto-dismiss non-persistent notifications after 10 seconds
+  useEffect(() => {
+    const autoDismissTimers: NodeJS.Timeout[] = [];
+    
+    notifications.forEach(notification => {
+      if (!notification.persistent) {
+        const timer = setTimeout(() => {
+          dismissNotification(notification.id);
+        }, 10000); // 10 seconds
+        autoDismissTimers.push(timer);
+      }
+    });
+
+    return () => {
+      autoDismissTimers.forEach(timer => clearTimeout(timer));
+    };
+  }, [notifications]);
+
   const dismissNotification = (id: string) => {
-    setDismissed(prev => new Set([...prev, id]));
+    setDismissed(prev => new Set([...Array.from(prev), id]));
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
@@ -134,7 +180,7 @@ export default function SmartNotifications({ currentEmotions, sessionDuration }:
       {notifications.map((notification) => (
         <div
           key={notification.id}
-          className={`glassmorphism bg-gradient-to-r ${getNotificationColor(notification.type)} border rounded-lg p-4 shadow-lg animate-slide-in-left`}
+          className={`glassmorphism bg-gradient-to-r ${getNotificationColor(notification.type)} border rounded-lg p-4 shadow-lg animate-slide-in-left hover:scale-[1.02] transition-transform duration-200`}
         >
           <div className="flex items-start gap-3">
             <div className={`w-8 h-8 rounded-full bg-gradient-to-r ${getNotificationColor(notification.type).replace('/20', '/50').replace('/30', '/60')} flex items-center justify-center flex-shrink-0`}>
