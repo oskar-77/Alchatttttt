@@ -2,6 +2,19 @@
 // import { GoogleGenerativeAI } from '@google/genai';
 import type { EmotionData } from '@shared/schema';
 
+// Helper function to create default emotion context
+function createDefaultEmotionContext(): EmotionData {
+  return {
+    happy: 0,
+    sad: 0,
+    angry: 0,
+    surprised: 0,
+    fearful: 0,
+    disgusted: 0,
+    neutral: 100
+  };
+}
+
 // AI Provider Interface
 export interface AIProvider {
   name: string;
@@ -21,7 +34,7 @@ class OpenAIProvider implements AIProvider {
   async generateResponse(userMessage: string, emotionContext: EmotionData): Promise<string> {
     try {
       if (!emotionContext || typeof emotionContext !== 'object') {
-        emotionContext = { neutral: 100 };
+        emotionContext = createDefaultEmotionContext();
       }
       
       const emotions = Object.entries(emotionContext);
@@ -77,7 +90,7 @@ class GeminiProvider implements AIProvider {
   async generateResponse(userMessage: string, emotionContext: EmotionData): Promise<string> {
     try {
       if (!emotionContext || typeof emotionContext !== 'object') {
-        emotionContext = { neutral: 100 };
+        emotionContext = createDefaultEmotionContext();
       }
       
       const emotions = Object.entries(emotionContext);
@@ -96,7 +109,7 @@ class GeminiProvider implements AIProvider {
 
       // Using Google Gemini REST API directly
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GOOGLE_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GOOGLE_API_KEY}`,
         {
           method: 'POST',
           headers: {
@@ -160,7 +173,7 @@ class FreeGPTProvider implements AIProvider {
   async generateResponse(userMessage: string, emotionContext: EmotionData): Promise<string> {
     try {
       if (!emotionContext || typeof emotionContext !== 'object') {
-        emotionContext = { neutral: 100 };
+        emotionContext = createDefaultEmotionContext();
       }
       
       const emotions = Object.entries(emotionContext);
@@ -233,7 +246,7 @@ class HuggingFaceProvider implements AIProvider {
   async generateResponse(userMessage: string, emotionContext: EmotionData): Promise<string> {
     try {
       if (!emotionContext || typeof emotionContext !== 'object') {
-        emotionContext = { neutral: 100 };
+        emotionContext = createDefaultEmotionContext();
       }
       
       const emotions = Object.entries(emotionContext);
@@ -307,7 +320,7 @@ class LocalProvider implements AIProvider {
 
   async generateResponse(userMessage: string, emotionContext: EmotionData): Promise<string> {
     if (!emotionContext || typeof emotionContext !== 'object') {
-      emotionContext = { neutral: 100 };
+      emotionContext = createDefaultEmotionContext();
     }
     
     const emotions = Object.entries(emotionContext);
