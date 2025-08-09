@@ -113,16 +113,27 @@ export default function Home() {
   }
 
   return (
-    <div className="flex h-screen">
-      {/* Chat Interface */}
-      <ChatInterface 
-        user={currentUser}
-        session={currentSession}
-        currentEmotions={currentEmotions}
-        onRegisterUser={registerUser}
-        onEmotionUpdate={updateEmotionData}
-        emotionBuffer={emotionBuffer}
-      />
+    <div className="flex flex-col md:flex-row h-screen overflow-hidden">
+      {/* Mobile Header */}
+      <div className="md:hidden bg-card/50 backdrop-blur-md border-b border-border p-3 flex items-center justify-between">
+        <h1 className="text-lg font-bold text-gradient">مساعد ذكي عاطفي</h1>
+        <SidebarToggle 
+          isOpen={showMobilePanel} 
+          onToggle={() => setShowMobilePanel(!showMobilePanel)} 
+        />
+      </div>
+
+      {/* Chat Interface - Full width on mobile, left side on desktop */}
+      <div className="flex-1 md:w-2/3 lg:w-3/4">
+        <ChatInterface 
+          user={currentUser}
+          session={currentSession}
+          currentEmotions={currentEmotions}
+          onRegisterUser={registerUser}
+          onEmotionUpdate={updateEmotionData}
+          emotionBuffer={emotionBuffer}
+        />
+      </div>
 
       {/* Desktop Monitoring Panel */}
       <div className="hidden lg:flex lg:w-2/5">
