@@ -69,10 +69,10 @@ export default function EnhancedMessageDisplay({ message, isUser }: EnhancedMess
         
         {/* Timestamp */}
         <p className="text-xs text-muted-foreground mt-2 opacity-70">
-          {new Date(message.timestamp).toLocaleTimeString('ar-SA', {
+          {message.timestamp ? new Date(message.timestamp).toLocaleTimeString('ar-SA', {
             hour: '2-digit',
             minute: '2-digit'
-          })}
+          }) : 'الآن'}
         </p>
       </div>
     </div>

@@ -1,41 +1,58 @@
-// Google Gemini support - Will be enhanced when @google/genai package is available
-// import { GoogleGenerativeAI } from '@google/genai';
-import type { EmotionData } from '@shared/schema';
+import OpenAI from "openai";
+import { GoogleGenAI } from "@google/genai";
+import type { EmotionData } from "@shared/schema";
 
-// AI Provider Interface
-export interface AIProvider {
+// AI Provider interface
+interface AIProvider {
   name: string;
-  isConfigured(): boolean;
   generateResponse(userMessage: string, emotionContext: EmotionData): Promise<string>;
+  isConfigured(): boolean;
 }
 
-// OpenAI Provider (Premium)
+// OpenAI Provider
 class OpenAIProvider implements AIProvider {
   name = "OpenAI GPT-4o";
+  private client: OpenAI;
+
+  constructor() {
+    this.client = new OpenAI({ 
+      apiKey: process.env.OPENAI_API_KEY || ""
+    });
+  }
 
   isConfigured(): boolean {
-    const apiKey = process.env.OPENAI_API_KEY;
-    return !!apiKey && apiKey.trim().length > 0;
+    return !!process.env.OPENAI_API_KEY;
   }
 
   async generateResponse(userMessage: string, emotionContext: EmotionData): Promise<string> {
     try {
-      if (!emotionContext || typeof emotionContext !== 'object') {
-        emotionContext = { neutral: 100 };
-      }
-      
-      const emotions = Object.entries(emotionContext);
-      if (emotions.length === 0) {
-        emotions.push(['neutral', 100]);
-      }
-      
-      const dominantEmotion = emotions.reduce((a, b) => a[1] > b[1] ? a : b);
+      const dominantEmotion = Object.entries(emotionContext).reduce((a, b) => a[1] > b[1] ? a : b);
       const emotionName = dominantEmotion[0];
       const emotionIntensity = dominantEmotion[1];
       const emotionPrompt = this.getEmotionPrompt(emotionName, emotionIntensity);
 
-      // This would require OpenAI SDK implementation
-      return `استجابة ذكية من OpenAI GPT-4: ${userMessage}`;
+      const response = await this.client.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `أنت مساعد ذكي عاطفي يتحدث العربية ويتفهم مشاعر المستخدمين. ${emotionPrompt}
+            
+            قواعد مهمة:
+            - اكتب بالعربية فقط
+            - كن متعاطفاً ومتفهماً
+            - قدم نصائح عملية ومفيدة
+            - اجعل ردودك قصيرة ومركزة (100-150 كلمة)
+            - استخدم الإيموجي بشكل مناسب
+            - تجنب النصائح الطبية المباشرة`
+          },
+          { role: "user", content: userMessage }
+        ],
+        max_tokens: 200,
+        temperature: 0.7
+      });
+
+      return response.choices[0].message.content || "أعتذر، لم أتمكن من فهم رسالتك.";
     } catch (error) {
       console.error("OpenAI error:", error);
       throw error;
@@ -58,15 +75,28 @@ class OpenAIProvider implements AIProvider {
         return highIntensity
           ? "المستخدم غاضب جداً. ساعده على التهدئة وإدارة غضبه بطريقة صحية."
           : "المستخدم يشعر بانزعاج. ساعده على فهم مشاعره والتعامل معها.";
+      case 'fearful':
+        return "المستخدم يشعر بالخوف أو القلق. طمئنه وقدم نصائح للتغلب على المخاوف.";
+      case 'surprised':
+        return "المستخدم متفاجئ. ساعده على معالجة المعلومات الجديدة أو الموقف.";
+      case 'disgusted':
+        return "المستخدم يشعر بالاشمئزاز أو عدم الرضا. ساعده على التعامل مع هذه المشاعر.";
       default:
         return "المستخدم في حالة محايدة. كن ودوداً ومفيداً في تفاعلك معه.";
     }
   }
 }
 
-// Google Gemini Provider (FREE!) - Using REST API directly
+// Google Gemini Provider (FREE!)
 class GeminiProvider implements AIProvider {
   name = "Google Gemini (مجاني)";
+  private client: GoogleGenAI;
+
+  constructor() {
+    this.client = new GoogleGenAI({ 
+      apiKey: process.env.GOOGLE_API_KEY || ""
+    });
+  }
 
   isConfigured(): boolean {
     const apiKey = process.env.GOOGLE_API_KEY;
@@ -76,80 +106,51 @@ class GeminiProvider implements AIProvider {
 
   async generateResponse(userMessage: string, emotionContext: EmotionData): Promise<string> {
     try {
-      if (!emotionContext || typeof emotionContext !== 'object') {
-        emotionContext = { neutral: 100 };
-      }
-      
-      const emotions = Object.entries(emotionContext);
-      if (emotions.length === 0) {
-        emotions.push(['neutral', 100]);
-      }
-      
-      const dominantEmotion = emotions.reduce((a, b) => a[1] > b[1] ? a : b);
+      const dominantEmotion = Object.entries(emotionContext).reduce((a, b) => a[1] > b[1] ? a : b);
       const emotionName = dominantEmotion[0];
-      const emotionArabic = this.getEmotionArabic(emotionName);
-      
-      const prompt = `أنت مساعد ذكي عاطفي يتحدث العربية. المستخدم يشعر بـ ${emotionArabic}. 
-      رسالته: "${userMessage}"
-      
-      قدم رداً متعاطفاً ومفيداً بالعربية (100-150 كلمة):`;
+      const emotionIntensity = dominantEmotion[1];
+      const emotionPrompt = this.getEmotionPrompt(emotionName, emotionIntensity);
 
-      // Using Google Gemini REST API directly
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GOOGLE_API_KEY}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: prompt
-              }]
-            }],
-            generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 200,
-            }
-          })
-        }
-      );
+      const response = await this.client.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [
+          {
+            role: "user",
+            parts: [{
+              text: `أنت مساعد ذكي عاطفي يتحدث العربية. ${emotionPrompt}
+              
+              رسالة المستخدم: "${userMessage}"
+              
+              رد عليه بشكل متعاطف ومفيد بالعربية (100-150 كلمة).`
+            }]
+          }
+        ]
+      });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.log(`Gemini API Error ${response.status}:`, errorText);
-        throw new Error(`فشل الاتصال بـ Gemini - كود الخطأ: ${response.status}`);
-      }
-
-      const result = await response.json();
-      
-      if (result.candidates && result.candidates[0] && result.candidates[0].content) {
-        return result.candidates[0].content.parts[0].text;
-      } else {
-        throw new Error("No response received from Gemini");
-      }
+      return response.text || "أعتذر، لم أتمكن من فهم رسالتك.";
     } catch (error) {
       console.error("Gemini error:", error);
       throw error;
     }
   }
 
-  private getEmotionArabic(emotion: string): string {
+  private getEmotionPrompt(emotion: string, intensity: number): string {
+    const highIntensity = intensity > 60;
     const emotionMap = {
-      happy: "السعادة",
-      sad: "الحزن",
-      angry: "الغضب",
-      surprised: "التفاجؤ",
-      fearful: "الخوف",
-      disgusted: "الاشمئزاز",
-      neutral: "الحياد"
+      happy: highIntensity ? "سعادة كبيرة" : "سعادة خفيفة",
+      sad: highIntensity ? "حزن شديد" : "حزن خفيف", 
+      angry: highIntensity ? "غضب شديد" : "انزعاج خفيف",
+      fearful: "خوف وقلق",
+      surprised: "تفاجؤ",
+      disgusted: "اشمئزاز",
+      neutral: "حالة طبيعية"
     };
-    return emotionMap[emotion as keyof typeof emotionMap] || emotion;
+    
+    return `المستخدم يشعر بـ ${emotionMap[emotion as keyof typeof emotionMap] || "مشاعر متنوعة"}.`;
   }
 }
 
-// Free GPT Provider (No API key needed!)
+// Free GPT API Provider (No API Key Required!)
 class FreeGPTProvider implements AIProvider {
   name = "Free GPT (مجاني تماماً)";
 
@@ -221,43 +222,36 @@ class FreeGPTProvider implements AIProvider {
   }
 }
 
-// Hugging Face Provider (Free with API key)
+// Free Hugging Face Provider
 class HuggingFaceProvider implements AIProvider {
   name = "Hugging Face (مجاني)";
+  private apiKey: string;
+
+  constructor() {
+    this.apiKey = process.env.HUGGINGFACE_API_KEY || "";
+  }
 
   isConfigured(): boolean {
-    const apiKey = process.env.HUGGINGFACE_API_KEY;
-    return !!apiKey && apiKey.trim().length > 0;
+    return !!this.apiKey;
   }
 
   async generateResponse(userMessage: string, emotionContext: EmotionData): Promise<string> {
     try {
-      if (!emotionContext || typeof emotionContext !== 'object') {
-        emotionContext = { neutral: 100 };
-      }
-      
-      const emotions = Object.entries(emotionContext);
-      if (emotions.length === 0) {
-        emotions.push(['neutral', 100]);
-      }
-      
-      const dominantEmotion = emotions.reduce((a, b) => a[1] > b[1] ? a : b);
+      const dominantEmotion = Object.entries(emotionContext).reduce((a, b) => a[1] > b[1] ? a : b);
       const emotionName = dominantEmotion[0];
-      const emotionArabic = this.getEmotionArabic(emotionName);
       
-      const prompt = `أنت مساعد ذكي عاطفي يتحدث العربية. المستخدم يشعر بـ ${emotionArabic}. 
+      const prompt = `أنت مساعد ذكي عاطفي. المستخدم يشعر بـ ${this.getEmotionArabic(emotionName)}. 
       رسالته: "${userMessage}"
-      
-      قدم رداً متعاطفاً ومفيداً بالعربية (100-150 كلمة):`;
+      رد عليه بالعربية بشكل متعاطف:`;
 
       const response = await fetch(
         "https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium",
         {
-          method: "POST",
           headers: {
-            "Authorization": `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
+            Authorization: `Bearer ${this.apiKey}`,
             "Content-Type": "application/json",
           },
+          method: "POST",
           body: JSON.stringify({
             inputs: prompt,
             parameters: {
@@ -440,10 +434,10 @@ class AIProviderManager {
   private getProviderDescription(name: string): string {
     const descriptions = {
       "Free GPT (مجاني تماماً)": "مزود مجاني تماماً - بدون مفاتيح API",
-      "Google Gemini (مجاني)": "ذكاء اصطناعي متقدم من Google - مجاني للاستخدام الشخصي",
-      "OpenAI GPT-4o": "أحدث نماذج GPT من OpenAI - يتطلب مفتاح API",
-      "Hugging Face (مجاني)": "مزود مفتوح المصدر - مجاني مع مفتاح API",
-      "الذكاء المحلي (مضمون)": "ردود ذكية محلية - متاح دائماً كاحتياطي"
+      "Google Gemini": "ذكاء اصطناعي متقدم من Google - مجاني للاستخدام الشخصي",
+      "OpenAI GPT": "أحدث نماذج GPT من OpenAI - يتطلب مفتاح API",
+      "Hugging Face": "مزود مفتوح المصدر - مجاني مع مفتاح API",
+      "Local AI (محلي)": "ردود ذكية محلية - متاح دائماً كاحتياطي"
     };
     return descriptions[name as keyof typeof descriptions] || "مزود ذكاء اصطناعي";
   }
