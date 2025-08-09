@@ -181,7 +181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({ 
         success: true,
-        response: response.content,
+        response: response.response,
         provider: response.provider
       });
     } catch (error: any) {
