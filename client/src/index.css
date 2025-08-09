@@ -271,6 +271,34 @@
   color: hsl(213, 31%, 91%);
 }
 
+/* Smooth scrolling */
+.scrollbar-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+/* Enhanced performance optimizations */
+.glassmorphism {
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Input focus enhancements */
+.input-enhanced {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(20px);
+}
+
+.input-enhanced:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  transform: translateY(-1px);
+}
+
 /* Enhanced button styles */
 .button-enhanced {
   @apply relative overflow-hidden;
@@ -301,14 +329,22 @@
   }
 }
 
-/* Custom scrollbar */
-.scrollbar-hidden {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+/* Optimized animations */
+.animate-slide-in-left {
+  animation: bounce-in 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
-.scrollbar-hidden::-webkit-scrollbar {
-  display: none;
+.smooth-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.floating-animation {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
 }
 
 /* Smart Animation for notifications */

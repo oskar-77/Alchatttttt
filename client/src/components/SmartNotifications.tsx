@@ -53,7 +53,7 @@ export default function SmartNotifications({ currentEmotions, sessionDuration }:
       const now = Date.now();
       const emotionCooldownKey = `${emotionName}-${Math.floor(emotionIntensity / 20)}`;
       const lastNotificationTime = emotionNotificationCooldown[emotionCooldownKey] || 0;
-      const cooldownPeriod = 30000; // 30 seconds cooldown between similar notifications
+      const cooldownPeriod = 25000; // 25 seconds cooldown between similar notifications
       
       if (emotionKey !== lastEmotionCheck && (now - lastNotificationTime) > cooldownPeriod) {
         setLastEmotionCheck(emotionKey);
@@ -130,7 +130,7 @@ export default function SmartNotifications({ currentEmotions, sessionDuration }:
     });
   }, [currentEmotions, sessionDuration, hasAI, dismissed]);
 
-  // Auto-dismiss non-persistent notifications after 10 seconds
+  // Auto-dismiss non-persistent notifications after 8 seconds
   useEffect(() => {
     const autoDismissTimers: NodeJS.Timeout[] = [];
     
@@ -138,7 +138,7 @@ export default function SmartNotifications({ currentEmotions, sessionDuration }:
       if (!notification.persistent) {
         const timer = setTimeout(() => {
           dismissNotification(notification.id);
-        }, 10000); // 10 seconds
+        }, 8000); // 8 seconds for better UX
         autoDismissTimers.push(timer);
       }
     });

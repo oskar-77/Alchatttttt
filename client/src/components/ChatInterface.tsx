@@ -161,7 +161,7 @@ export default function ChatInterface({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  const getEmotionDisplay = (emotions: EmotionData | null) => {
+  const getEmotionDisplay = (emotions: EmotionData | null): React.ReactNode => {
     if (!emotions) return null;
     
     const topEmotions = Object.entries(emotions)
@@ -258,7 +258,7 @@ export default function ChatInterface({
                       placeholder="أدخل رسالة لاختبار الذكاء الاصطناعي..."
                       value={testMessage}
                       onChange={(e) => setTestMessage(e.target.value)}
-                      className="bg-muted/50 border-border min-h-[80px]"
+                      className="bg-gray-900/80 border-gray-600/50 text-white placeholder:text-gray-400 focus:border-primary/50 focus:ring-primary/30 min-h-[80px]"
                     />
                   </div>
                   
@@ -334,14 +334,14 @@ export default function ChatInterface({
                       placeholder="الاسم الكامل"
                       value={userName}
                       onChange={(e) => setUserName(e.target.value)}
-                      className="bg-gray-800/50 border-gray-600"
+                      className="bg-gray-900/80 border-gray-600/50 text-white placeholder:text-gray-400 focus:border-primary/50 focus:ring-primary/30"
                     />
                     <Input
                       placeholder="البريد الإلكتروني (اختياري)"
                       type="email"
                       value={userEmail}
                       onChange={(e) => setUserEmail(e.target.value)}
-                      className="bg-gray-800/50 border-gray-600"
+                      className="bg-gray-900/80 border-gray-600/50 text-white placeholder:text-gray-400 focus:border-primary/50 focus:ring-primary/30"
                     />
                     <p className="text-xs text-muted-foreground flex items-center gap-2">
                       <MessageCircle className="w-3 h-3" />
@@ -385,7 +385,7 @@ export default function ChatInterface({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto scrollbar-hidden p-6 space-y-4">
+      <div className="flex-1 overflow-y-auto scrollbar-hidden p-6 space-y-4 scroll-smooth">
         {/* Smart Welcome Message */}
         <div className="flex items-start gap-3">
           <div className="w-8 h-8 rounded-full bg-gradient-to-r from-accent to-primary flex items-center justify-center flex-shrink-0 floating-animation">
@@ -401,7 +401,11 @@ export default function ChatInterface({
               <>
                 <div className="chat-bubble-user p-4 max-w-md sm:max-w-xs md:max-w-md text-white card-hover">
                   <p className="leading-relaxed">{msg.content}</p>
-                  {msg.emotionContext && getEmotionDisplay(msg.emotionContext as EmotionData)}
+                  {msg.emotionContext && (
+                    <div className="mt-2">
+                      {getEmotionDisplay(msg.emotionContext as EmotionData | null)}
+                    </div>
+                  )}
                   <span className="text-xs text-white/70 mt-2 block">
                     {formatTime(msg.timestamp!)}
                   </span>
@@ -454,7 +458,7 @@ export default function ChatInterface({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="اكتب رسالتك هنا..."
-              className="bg-muted/50 border-border rounded-full pr-4 pl-12 py-3 focus:ring-2 focus:ring-primary/50 transition-all duration-300"
+              className="input-enhanced bg-gray-900/90 border-gray-600/60 text-white placeholder:text-gray-400 rounded-full pr-4 pl-12 py-3 h-12 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 focus:bg-gray-800/90 hover:bg-gray-800/80 transition-all duration-300 backdrop-blur-sm"
               disabled={sendMessageMutation.isPending}
             />
             <MessageCircle className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
