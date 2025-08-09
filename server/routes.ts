@@ -162,32 +162,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Get available AI providers
+  // Get available AI providers with enhanced status
   app.get("/api/ai-providers", async (req, res) => {
-    const providers = aiProviderManager.getAvailableProviders();
-    res.json(providers);
+    try {
+      const providers = aiProviderManager.getAvailableProviders();
+      
+      // Add enhanced status information
+      const enhancedProviders = providers.map(provider => ({
+        ...provider,
+        status: provider.configured ? 'active' : 'inactive',
+        lastTest: new Date().toISOString(),
+        description: 'مزود ذكاء اصطناعي متقدم'
+      }));
+      
+      res.json(enhancedProviders);
+    } catch (error) {
+      console.error('Error fetching providers:', error);
+      res.status(500).json({ error: 'فشل في جلب معلومات المزودين' });
+    }
   });
 
-  // Test AI Provider endpoint
+  // Enhanced Test AI Provider endpoint with better error handling
   app.post('/api/test-ai-provider', async (req, res) => {
+    const startTime = Date.now();
     try {
       const { provider: providerName, message, emotions } = req.body;
+      console.log(`🧪 Testing AI Provider: ${providerName || 'auto'}`);
       
-      if (!providerName || !message || !emotions) {
-        return res.status(400).json({ error: 'Missing required fields' });
+      if (!message || !emotions) {
+        return res.status(400).json({
+          success: false,
+          error: 'رسالة الاختبار والمشاعر مطلوبة'
+        });
       }
-
-      const response = await aiProviderManager.generateResponse(message, emotions);
       
-      res.json({ 
+      const { response: aiResponse, provider } = await aiProviderManager.generateResponse(
+        message,
+        emotions
+      );
+
+      const responseTime = Date.now() - startTime;
+      console.log(`✅ Test completed in ${responseTime}ms`);
+
+      res.json({
         success: true,
-        response: response.response,
-        provider: response.provider
+        response: aiResponse,
+        provider,
+        responseTime,
+        timestamp: new Date().toISOString()
       });
     } catch (error: any) {
-      console.error('AI Provider test error:', error);
-      res.status(500).json({ 
-        error: error.message || 'Failed to test AI provider'
+      const responseTime = Date.now() - startTime;
+      console.error(`❌ Test failed after ${responseTime}ms:`, error);
+      
+      res.json({
+        success: false,
+        error: error.message || 'خطأ في الاتصال بمزود الذكاء الاصطناعي',
+        responseTime,
+        timestamp: new Date().toISOString()
       });
     }
   });

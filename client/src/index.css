@@ -78,11 +78,14 @@
 
   body {
     @apply text-foreground font-sans antialiased;
-    font-family: 'Inter', 'Cairo', system-ui, sans-serif;
+    font-family: 'Noto Sans Arabic', 'Tajawal', 'IBM Plex Sans Arabic', 'Inter', 'Cairo', system-ui, sans-serif;
     direction: rtl;
     min-height: 100vh;
+    line-height: 1.8;
+    letter-spacing: 0.01em;
+    font-weight: 400;
     background: linear-gradient(135deg, 
-      hsl(217, 32%, 6%) 0%, 
+      hsl(217, 32%, 4%) 0%, 
       hsl(217, 33%, 8%) 25%, 
       hsl(220, 30%, 5%) 50%,
       hsl(217, 33%, 8%) 75%,
@@ -134,8 +137,13 @@
 
   .typing-dot {
     @apply w-2 h-2 rounded-full bg-primary;
-    animation: typing 1.4s infinite;
+    animation: typing 1.4s infinite ease-in-out;
+    opacity: 0.4;
   }
+  
+  .typing-dot:nth-child(1) { animation-delay: 0ms; }
+  .typing-dot:nth-child(2) { animation-delay: 200ms; }
+  .typing-dot:nth-child(3) { animation-delay: 400ms; }
 
   .mobile-safe {
     @apply px-4 md:px-6 lg:px-8;
@@ -241,10 +249,47 @@
 @keyframes typing {
   0%, 60%, 100% {
     transform: translateY(0);
+    opacity: 0.4;
   }
   30% {
     transform: translateY(-10px);
+    opacity: 1;
   }
+}
+
+/* Enhanced Arabic font rendering */
+* {
+  font-feature-settings: "kern" 1, "liga" 1, "clig" 1, "calt" 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Better text selection */
+::selection {
+  background: hsla(142, 76%, 36%, 0.3);
+  color: hsl(213, 31%, 91%);
+}
+
+/* Enhanced button styles */
+.button-enhanced {
+  @apply relative overflow-hidden;
+  background: linear-gradient(135deg, hsl(142, 80%, 38%), hsl(197, 75%, 53%));
+  border: 1px solid hsla(142, 80%, 50%, 0.3);
+  box-shadow: 0 4px 15px hsla(142, 80%, 38%, 0.25);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 500;
+}
+
+.button-enhanced:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px hsla(142, 80%, 38%, 0.35);
+  border-color: hsla(142, 80%, 50%, 0.5);
+}
+
+.button-enhanced:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 15px hsla(142, 80%, 38%, 0.25);
 }
 
 @keyframes pulse {

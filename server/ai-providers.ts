@@ -179,7 +179,9 @@ class FreeGPTProvider implements AIProvider {
       );
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.log(`FreeGPT API Error ${response.status}:`, errorText);
+        throw new Error(`فشل الاتصال بـ FreeGPT - كود الخطأ: ${response.status}`);
       }
 
       const result = await response.json();
@@ -401,11 +403,23 @@ class AIProviderManager {
     };
   }
 
-  getAvailableProviders(): Array<{name: string; configured: boolean}> {
+  getAvailableProviders(): Array<{name: string; configured: boolean; description: string}> {
     return this.providers.map(provider => ({
       name: provider.name,
-      configured: provider.isConfigured()
+      configured: provider.isConfigured(),
+      description: this.getProviderDescription(provider.name)
     }));
+  }
+
+  private getProviderDescription(name: string): string {
+    const descriptions = {
+      "Free GPT (مجاني تماماً)": "مزود مجاني تماماً - بدون مفاتيح API",
+      "Google Gemini": "ذكاء اصطناعي متقدم من Google - مجاني للاستخدام الشخصي",
+      "OpenAI GPT": "أحدث نماذج GPT من OpenAI - يتطلب مفتاح API",
+      "Hugging Face": "مزود مفتوح المصدر - مجاني مع مفتاح API",
+      "Local AI (محلي)": "ردود ذكية محلية - متاح دائماً كاحتياطي"
+    };
+    return descriptions[name as keyof typeof descriptions] || "مزود ذكاء اصطناعي";
   }
 }
 

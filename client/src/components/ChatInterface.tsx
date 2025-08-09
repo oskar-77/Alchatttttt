@@ -5,12 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { formatTime } from "@/lib/utils";
+// Removed formatTime import - using local function instead
 import { useToast } from "@/hooks/use-toast";
 import ProviderStatus from "@/components/ProviderStatus";
 import SmartWelcomeMessage from "@/components/SmartWelcomeMessage";
 import AIProviderSettings from "@/components/AIProviderSettings";
+import APIHealthMonitor from "@/components/APIHealthMonitor";
 import { MessageCircle, Send, Settings, User as UserIcon, Bot, Sparkles, TestTube, CheckCircle, XCircle, Loader } from "lucide-react";
+import EnhancedMessageDisplay from "@/components/EnhancedMessageDisplay";
 import type { User, Session, ChatMessage, EmotionData } from "@shared/schema";
 
 interface ChatInterfaceProps {
@@ -231,12 +233,15 @@ export default function ChatInterface({
           </div>
           
           <div className="mobile-flex gap-2">
+            {/* API Health Monitor */}
+            <APIHealthMonitor />
+            
             {/* API Test Button */}
             <Dialog open={showTestDialog} onOpenChange={setShowTestDialog}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="button-modern border-info/50 text-info hover:bg-info/20">
+                <Button variant="outline" size="sm" className="button-modern border-warning/50 text-warning hover:bg-warning/20">
                   <TestTube className="w-4 h-4 ml-2" />
-                  اختبار API
+                  اختبار سريع
                 </Button>
               </DialogTrigger>
               <DialogContent className="glassmorphism border-white/20 max-w-md">
@@ -352,7 +357,7 @@ export default function ChatInterface({
                       </Button>
                       <Button 
                         onClick={handleRegister}
-                        className="flex-1 bg-gradient-to-r from-primary to-secondary"
+                        className="flex-1 button-enhanced"
                         disabled={!userName.trim()}
                       >
                         تسجيل
@@ -429,9 +434,9 @@ export default function ChatInterface({
             </div>
             <div className="chat-bubble-ai p-4 emotion-glow">
               <div className="typing-indicator">
-                <div className="typing-dot" style={{ animationDelay: '0ms' }}></div>
-                <div className="typing-dot" style={{ animationDelay: '200ms' }}></div>
-                <div className="typing-dot" style={{ animationDelay: '400ms' }}></div>
+                <div className="typing-dot"></div>
+                <div className="typing-dot"></div>
+                <div className="typing-dot"></div>
               </div>
               <span className="text-xs text-muted-foreground mt-2 block">يكتب...</span>
             </div>
@@ -458,7 +463,7 @@ export default function ChatInterface({
           <Button 
             type="submit"
             size="icon"
-            className="button-modern rounded-full bg-gradient-to-r from-primary to-secondary hover:scale-105 w-12 h-12 flex-shrink-0"
+            className="button-enhanced rounded-full hover:scale-105 w-12 h-12 flex-shrink-0"
             disabled={!message.trim() || sendMessageMutation.isPending}
           >
             {sendMessageMutation.isPending ? (
